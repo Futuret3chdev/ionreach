@@ -172,9 +172,9 @@ export function Ionreach() {
         }
         if (introRef.current > 9) {
           modeRef.current = "play";
-          cam.x = p.player.x;
-          cam.y = p.player.y + 40;
-          cam.z = 1.05;
+          cam.x = p.player.x + 160;
+          cam.y = p.player.y - 160;
+          cam.z = 0.92;
           setFlyover(false);
         }
       } else if (!pauseRef.current && sim.winner === null) {
@@ -416,7 +416,7 @@ export function Ionreach() {
     sfx.current.stopScore();
     const sim = new Sim();
     simRef.current = sim;
-    camRef.current = { x: sim.pois.player.x, y: sim.pois.player.y + 30, z: 1.02 };
+    camRef.current = { x: sim.pois.player.x + 160, y: sim.pois.player.y - 160, z: 0.92 };
     modeRef.current = "intro";
     introRef.current = 0;
     pauseRef.current = false;
@@ -620,9 +620,9 @@ export function Ionreach() {
                       modeRef.current = "play";
                       const p = simRef.current?.pois;
                       if (p) {
-                        camRef.current.x = p.player.x;
-                        camRef.current.y = p.player.y + 40;
-                        camRef.current.z = 1.05;
+                        camRef.current.x = p.player.x + 160;
+                        camRef.current.y = p.player.y - 160;
+                        camRef.current.z = 0.92;
                       }
                       setFlyover(false);
                     }}

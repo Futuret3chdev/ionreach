@@ -245,18 +245,18 @@ export class Sim {
         for (let c = 0; c < cols; c++) this.addUnit(kind, team, x0 + c * sx, y0 + r * sy);
       }
     };
-    // Massed Helion column, in frame of the forward base.
-    column("rifle", 0, 70, 1090, 8, 3, 46, 36);
-    column("rifle", 0, 500, 1090, 6, 3, 46, 36);
-    column("rocket", 0, 90, 1210, 8, 1, 72, 0);
-    column("viper", 0, 80, 1268, 6, 1, 108, 0);
-    column("lancer", 0, 760, 1140, 4, 1, 96, 0);
-    column("bastion", 0, 740, 1260, 3, 1, 130, 0);
-    this.addUnit("kestrel", 0, 240, 1020);
-    this.addUnit("kestrel", 0, 460, 1000);
-    this.addUnit("kestrel", 0, 680, 1020);
-    this.addUnit("condor", 0, 900, 1060);
-    const ace = this.addUnit("t3x", 0, 430, 1160);
+    // Massed Helion column, framed on the opening camera.
+    column("viper", 0, 140, 1100, 6, 1, 110, 0);
+    column("lancer", 0, 180, 1170, 4, 1, 120, 0);
+    column("bastion", 0, 720, 1140, 3, 1, 130, 0);
+    column("rifle", 0, 80, 1230, 10, 2, 44, 38);
+    column("rifle", 0, 540, 1230, 6, 2, 44, 38);
+    column("rocket", 0, 100, 1315, 8, 1, 78, 0);
+    this.addUnit("kestrel", 0, 220, 1040);
+    this.addUnit("kestrel", 0, 420, 1020);
+    this.addUnit("kestrel", 0, 640, 1040);
+    this.addUnit("condor", 0, 860, 1080);
+    const ace = this.addUnit("t3x", 0, 480, 1165);
     this.addBuilding("spire", 1, 63.5 * TILE, 9.5 * TILE, true);
     this.addBuilding("relay", 1, 67 * TILE, 9 * TILE, true);
     this.addBuilding("refinery", 1, 63.5 * TILE, 13.5 * TILE, true);
