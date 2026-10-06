@@ -53,16 +53,6 @@ const ICONS: Record<Kind, typeof Hexagon> = {
   condor: Plane,
 };
 
-const CHAPTERS = [
-  { t: 0, name: "Glass Horizon" },
-  { t: 15, name: "Callsign T3X" },
-  { t: 30, name: "The Vein" },
-  { t: 45, name: "Steel" },
-  { t: 60, name: "The Wall" },
-  { t: 75, name: "The Sky" },
-  { t: 90, name: "Vesper" },
-];
-
 function clock(t: number): string {
   const s = Math.max(0, Math.floor(t));
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -496,7 +486,7 @@ export function Ionreach() {
       <video
         ref={vidRef}
         className={battle ? "hidden" : "absolute inset-0 h-full w-full object-cover"}
-        src="/media/trailer.mp4"
+        src="/media/trailer.mp4?v=4"
         poster="/media/poster.jpg"
         playsInline
         muted
@@ -517,18 +507,11 @@ export function Ionreach() {
             </button>
             <button type="button" onClick={() => openCinema(0)} className="inline-flex min-h-11 items-center gap-2 border border-line bg-surface/80 px-5 font-display text-lg text-fg">
               <Play className="size-4" />
-              Story — 2:00
+              Play trailer
             </button>
             <button type="button" onClick={() => setManual(true)} className="min-h-11 px-4 font-display text-lg text-muted">
               Field manual
             </button>
-          </div>
-          <div className="mt-4 flex max-w-3xl gap-2 overflow-x-auto">
-            {CHAPTERS.map((c) => (
-              <button key={c.name} type="button" onClick={() => openCinema(c.t)} className="min-h-11 shrink-0 border border-line bg-surface/70 px-3 font-display text-sm text-fg">
-                {c.name}
-              </button>
-            ))}
           </div>
           <p className="mt-6 max-w-lg text-xs text-muted">
             Original battle sim. Not affiliated with any classic strategy publisher.
@@ -539,24 +522,7 @@ export function Ionreach() {
 
       {cinema && (
         <div className="absolute inset-0 z-30 flex flex-col bg-bg">
-          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4" autoPlay controls playsInline poster="/media/poster.jpg" />
-          <div className="flex items-center gap-2 overflow-x-auto px-3 pt-2">
-            {CHAPTERS.map((c) => (
-              <button
-                key={c.name}
-                type="button"
-                onClick={() => {
-                  const v = cutRef.current;
-                  if (!v) return;
-                  v.currentTime = c.t;
-                  void v.play().catch(() => undefined);
-                }}
-                className="min-h-11 shrink-0 border border-line px-3 font-display text-sm"
-              >
-                {c.name}
-              </button>
-            ))}
-          </div>
+          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=4" autoPlay controls playsInline poster="/media/poster.jpg" />
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <p className="font-display text-lg tracking-widest text-ion">T3X · GLASS HORIZON</p>
             <button type="button" onClick={closeCinema} className="min-h-11 bg-ion px-4 font-display text-bg">
