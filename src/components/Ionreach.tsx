@@ -486,7 +486,7 @@ export function Ionreach() {
       <video
         ref={vidRef}
         className={battle ? "hidden" : "absolute inset-0 h-full w-full object-cover"}
-        src="/media/trailer.mp4?v=4"
+        src="/media/trailer.mp4?v=5"
         poster="/media/poster.jpg"
         playsInline
         muted
@@ -522,7 +522,7 @@ export function Ionreach() {
 
       {cinema && (
         <div className="absolute inset-0 z-30 flex flex-col bg-bg">
-          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=4" autoPlay controls playsInline poster="/media/poster.jpg" />
+          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=5" autoPlay controls playsInline poster="/media/poster.jpg" />
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <p className="font-display text-lg tracking-widest text-ion">T3X · GLASS HORIZON</p>
             <button type="button" onClick={closeCinema} className="min-h-11 bg-ion px-4 font-display text-bg">
