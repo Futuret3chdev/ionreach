@@ -17,6 +17,15 @@ export const KINDS = [
   "harvester",
   "lancer",
   "bastion",
+  "wall",
+  "sam",
+  "cannon",
+  "strip",
+  "viper",
+  "aegis",
+  "t3x",
+  "kestrel",
+  "condor",
 ] as const;
 
 export type Kind = (typeof KINDS)[number];
@@ -48,6 +57,10 @@ export interface Def {
   prereq?: Kind;
   builtBy?: Kind;
   hot?: string;
+  /** Flies. Ignores the ridge and ground traffic. */
+  air?: boolean;
+  /** What this weapon is allowed to track. */
+  vs?: "ground" | "air" | "any";
 }
 
 export const DEFS: Record<Kind, Def> = {
@@ -324,10 +337,235 @@ export const DEFS: Record<Kind, Def> = {
     building: false,
     builtBy: "bay",
   },
+  wall: {
+    kind: "wall",
+    name: "Shard Wall",
+    blurb: "Cheap glass. It buys a second.",
+    cost: 70,
+    time: 4,
+    hp: 340,
+    speed: 0,
+    range: 0,
+    rof: 0,
+    dmg: 0,
+    armor: "structure",
+    radius: 16,
+    fw: 1,
+    fh: 1,
+    vision: 80,
+    drain: 0,
+    power: 0,
+    cargo: 0,
+    projectile: "none",
+    building: true,
+  },
+  sam: {
+    kind: "sam",
+    name: "Sky Lance",
+    blurb: "Missiles for anything that leaves the ground.",
+    cost: 500,
+    time: 10,
+    hp: 420,
+    speed: 0,
+    range: 230,
+    rof: 1.35,
+    dmg: 28,
+    armor: "structure",
+    radius: 20,
+    fw: 1,
+    fh: 1,
+    vision: 280,
+    drain: 12,
+    power: 0,
+    cargo: 0,
+    projectile: "rocket",
+    building: true,
+    prereq: "barracks",
+    vs: "air",
+  },
+  cannon: {
+    kind: "cannon",
+    name: "Ridge Gun",
+    blurb: "A long barrel. It hates hulls.",
+    cost: 750,
+    time: 12,
+    hp: 640,
+    speed: 0,
+    range: 240,
+    rof: 1.55,
+    dmg: 34,
+    armor: "structure",
+    radius: 22,
+    fw: 2,
+    fh: 2,
+    vision: 260,
+    drain: 16,
+    power: 0,
+    cargo: 0,
+    projectile: "shell",
+    building: true,
+    prereq: "turret",
+    vs: "ground",
+  },
+  strip: {
+    kind: "strip",
+    name: "Launch Spine",
+    blurb: "Puts Kestrels and Condors in the sky.",
+    cost: 1700,
+    time: 20,
+    hp: 980,
+    speed: 0,
+    range: 0,
+    rof: 0,
+    dmg: 0,
+    armor: "structure",
+    radius: 54,
+    fw: 3,
+    fh: 2,
+    vision: 240,
+    drain: 22,
+    power: 0,
+    cargo: 0,
+    projectile: "none",
+    building: true,
+    prereq: "bay",
+  },
+  viper: {
+    kind: "viper",
+    name: "Viper",
+    blurb: "Light tank. Fast eyes on a push.",
+    cost: 380,
+    time: 8,
+    hp: 170,
+    speed: 96,
+    range: 132,
+    rof: 0.72,
+    dmg: 12,
+    armor: "heavy",
+    radius: 12,
+    fw: 0,
+    fh: 0,
+    vision: 250,
+    drain: 0,
+    power: 0,
+    cargo: 0,
+    projectile: "shell",
+    building: false,
+    builtBy: "bay",
+    vs: "ground",
+  },
+  aegis: {
+    kind: "aegis",
+    name: "Aegis",
+    blurb: "Missile hull. Built to swat aircraft.",
+    cost: 620,
+    time: 11,
+    hp: 240,
+    speed: 68,
+    range: 200,
+    rof: 1.25,
+    dmg: 26,
+    armor: "heavy",
+    radius: 14,
+    fw: 0,
+    fh: 0,
+    vision: 250,
+    drain: 0,
+    power: 0,
+    cargo: 0,
+    projectile: "rocket",
+    building: false,
+    builtBy: "bay",
+    vs: "air",
+  },
+  t3x: {
+    kind: "t3x",
+    name: "T3X",
+    blurb: "Directorate callsign. The hull that holds the horizon.",
+    cost: 1500,
+    time: 16,
+    hp: 640,
+    speed: 70,
+    range: 168,
+    rof: 0.85,
+    dmg: 26,
+    armor: "heavy",
+    radius: 16,
+    fw: 0,
+    fh: 0,
+    vision: 300,
+    drain: 0,
+    power: 0,
+    cargo: 0,
+    projectile: "shell",
+    building: false,
+    builtBy: "bay",
+    vs: "any",
+  },
+  kestrel: {
+    kind: "kestrel",
+    name: "Kestrel",
+    blurb: "Fighter. Owns the air, stings the ground.",
+    cost: 900,
+    time: 12,
+    hp: 150,
+    speed: 130,
+    range: 150,
+    rof: 0.55,
+    dmg: 11,
+    armor: "light",
+    radius: 12,
+    fw: 0,
+    fh: 0,
+    vision: 320,
+    drain: 0,
+    power: 0,
+    cargo: 0,
+    projectile: "bolt",
+    building: false,
+    builtBy: "strip",
+    air: true,
+    vs: "any",
+  },
+  condor: {
+    kind: "condor",
+    name: "Condor",
+    blurb: "Bomber. Slow, and it opens structures.",
+    cost: 1400,
+    time: 16,
+    hp: 260,
+    speed: 88,
+    range: 150,
+    rof: 1.6,
+    dmg: 32,
+    armor: "light",
+    radius: 14,
+    fw: 0,
+    fh: 0,
+    vision: 280,
+    drain: 0,
+    power: 0,
+    cargo: 0,
+    projectile: "shell",
+    building: false,
+    builtBy: "strip",
+    air: true,
+    vs: "ground",
+  },
 };
 
-export const BUILD_MENU: Kind[] = ["relay", "refinery", "barracks", "bay", "turret", "silo"];
-export const UNIT_MENU: Kind[] = ["rifle", "rocket", "harvester", "lancer", "bastion"];
+export const BUILD_MENU: Kind[] = ["relay", "refinery", "barracks", "bay", "strip", "turret", "sam", "cannon", "wall", "silo"];
+export const UNIT_MENU: Kind[] = ["rifle", "rocket", "harvester", "viper", "lancer", "aegis", "bastion", "t3x", "kestrel", "condor"];
+
+export function engages(from: Kind, to: Kind): boolean {
+  const a = DEFS[from];
+  const b = DEFS[to];
+  if (a.range <= 0) return false;
+  const vs = a.vs ?? (a.projectile === "rocket" ? "any" : "ground");
+  if (b.air && vs === "ground") return false;
+  if (!b.air && vs === "air") return false;
+  return true;
+}
 
 export function scaledDamage(from: Kind, armor: Armor): number {
   const d = DEFS[from].dmg;
@@ -338,6 +576,13 @@ export function scaledDamage(from: Kind, armor: Armor): number {
   if (from === "lancer" && armor === "light") return d * 0.85;
   if (from === "bastion" && armor === "structure") return d * 1.35;
   if (from === "turret" && armor === "light") return d * 1.15;
+  if (from === "cannon" && armor === "structure") return d * 1.4;
+  if (from === "cannon" && armor === "light") return d * 0.8;
+  if (from === "viper" && armor === "light") return d * 1.15;
+  if (from === "condor" && armor === "structure") return d * 1.55;
+  if (from === "kestrel" && armor === "light") return d * 1.25;
+  if ((from === "sam" || from === "aegis") && armor === "light") return d * 1.45;
+  if (from === "t3x" && armor === "structure") return d * 1.2;
   return d;
 }
 
@@ -365,6 +610,24 @@ export function onlineLine(kind: Kind): string {
       return "Lancer crew mounted.";
     case "bastion":
       return "Bastion heavy, on the line.";
+    case "wall":
+      return "Shard wall set.";
+    case "sam":
+      return "Sky Lance is watching the air.";
+    case "cannon":
+      return "Ridge gun has the lane.";
+    case "strip":
+      return "Launch spine is clear.";
+    case "viper":
+      return "Viper crew mounted.";
+    case "aegis":
+      return "Aegis is hunting the sky.";
+    case "t3x":
+      return "T3X is on the glass.";
+    case "kestrel":
+      return "Kestrel airborne.";
+    case "condor":
+      return "Condor is in the climb.";
     default:
       return DEFS[kind].name + " ready.";
   }

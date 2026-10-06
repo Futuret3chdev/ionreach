@@ -9,6 +9,7 @@ import {
   WORLD_W,
   onlineLine,
   scaledDamage,
+  engages,
   type Kind,
   type Team,
 } from "./content";
@@ -244,6 +245,7 @@ export class Sim {
     this.addUnit("rifle", 0, 250, 1340);
     this.addUnit("rifle", 0, 360, 1260);
     this.addUnit("lancer", 0, 520, 1240);
+    const ace = this.addUnit("t3x", 0, 460, 1180);
     this.addBuilding("spire", 1, 63.5 * TILE, 9.5 * TILE, true);
     this.addBuilding("relay", 1, 67 * TILE, 9 * TILE, true);
     this.addBuilding("refinery", 1, 63.5 * TILE, 13.5 * TILE, true);
@@ -254,8 +256,8 @@ export class Sim {
     this.addUnit("rifle", 1, 2200, 500);
     this.addUnit("rifle", 1, 2080, 520);
     this.addUnit("lancer", 1, 2360, 560);
-    this.selected = [p.id];
-    this.say("Glass Horizon. The spire is yours — the glow is not.");
+    this.selected = [p.id, ace.id];
+    this.say("Callsign T3X is on the glass. The spire is yours — the glow is not.");
   }
 
   private make(kind: Kind, team: Team, x: number, y: number): Ent {
@@ -408,7 +410,7 @@ export class Sim {
         }
       }
     }
-    if (e.kind === "turret") this.tickSoldier(e, dt);
+    if (e.kind === "turret" || e.kind === "sam" || e.kind === "cannon") this.tickSoldier(e, dt);
     if (e.hp < e.maxHp * 0.42 && Math.random() < dt * 1.5) {
       this.particles.push({
         x: e.x + (Math.random() - 0.5) * 20,
@@ -426,11 +428,12 @@ export class Sim {
 
   private tickSoldier(e: Ent, dt: number): void {
     const def = DEFS[e.kind];
-    if (def.building && (e.buildLeft > 0 || (e.kind === "turret" && this.powerOf(e.team).low))) {
+    if (def.building && (e.buildLeft > 0 || (def.range > 0 && this.powerOf(e.team).low))) {
       return;
     }
     const engage = this.pickEngage(e);
-    const inRange = engage ? this.dist(e, engage) <= def.range + 1 && this.hasLos(e.x, e.y, engage, e.id) : false;
+    const los = engage ? DEFS[e.kind].air || DEFS[engage.kind].air || this.hasLos(e.x, e.y, engage, e.id) : false;
+    const inRange = engage ? this.dist(e, engage) <= def.range + 1 && los : false;
     if (engage && inRange) {
       e.aim += this.angDiff(e.aim, Math.atan2(engage.y - e.y, engage.x - e.x)) * Math.min(1, dt * 8);
       e.cooldown -= dt;
@@ -487,11 +490,24 @@ export class Sim {
       return;
     }
     const speed = DEFS[e.kind].speed;
+    const air = !!DEFS[e.kind].air;
     const step = Math.min(d, speed * dt);
     const nx = e.x + (dx / d) * step;
     const ny = e.y + (dy / d) * step;
-    if (!this.circleBlocked(nx, ny, 6, e.id)) {
-      if (e.kind !== "rifle" && e.kind !== "rocket" && Math.random() < dt * 8) {
+    if (air || !this.circleBlocked(nx, ny, 6, e.id)) {
+      if (air && Math.random() < dt * 10) {
+        this.particles.push({
+          x: e.x - Math.cos(e.facing) * 10,
+          y: e.y - Math.sin(e.facing) * 10,
+          vx: 0,
+          vy: 0,
+          life: 0.45,
+          max: 0.45,
+          size: 4,
+          color: "rgba(180,220,230,0.35)",
+          kind: "smoke",
+        });
+      } else if (!air && e.kind !== "rifle" && e.kind !== "rocket" && Math.random() < dt * 8) {
         this.tracks.push({ x: e.x, y: e.y, a: e.facing, life: 2.4 });
       } else if ((e.kind === "rifle" || e.kind === "rocket") && Math.random() < dt * 6) {
         this.particles.push({
@@ -613,7 +629,7 @@ export class Sim {
       vy: Math.sin(ang) * speed,
       dmg: scaledDamage(e.kind, target.kind === e.kind ? DEFS[target.kind].armor : DEFS[target.kind].armor),
       team: e.team,
-      splash: def.projectile === "rocket" ? 28 : e.kind === "bastion" ? 18 : 0,
+      splash: def.projectile === "rocket" ? 28 : e.kind === "bastion" || e.kind === "condor" ? 22 : e.kind === "cannon" ? 14 : 0,
       life: 1.8,
       kind: def.projectile,
       targetId: target.id,
@@ -772,19 +788,22 @@ export class Sim {
       for (let j = i + 1; j < units.length; j++) {
         const a = units[i];
         const b = units[j];
+        const aAir = !!DEFS[a.kind].air;
+        const bAir = !!DEFS[b.kind].air;
+        if (aAir !== bAir) continue;
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const d = Math.hypot(dx, dy) || 0.001;
-        const need = (DEFS[a.kind].radius + DEFS[b.kind].radius) * 0.72;
+        const need = (DEFS[a.kind].radius + DEFS[b.kind].radius) * (aAir ? 1.35 : 0.72);
         if (d < need) {
           const push = ((need - d) / need) * 0.5;
           const ox = (dx / d) * push * 8;
           const oy = (dy / d) * push * 8;
-          if (!this.circleBlocked(a.x - ox, a.y - oy, 4, a.id)) {
+          if (aAir || !this.circleBlocked(a.x - ox, a.y - oy, 4, a.id)) {
             a.x -= ox;
             a.y -= oy;
           }
-          if (!this.circleBlocked(b.x + ox, b.y + oy, 4, b.id)) {
+          if (bAir || !this.circleBlocked(b.x + ox, b.y + oy, 4, b.id)) {
             b.x += ox;
             b.y += oy;
           }
@@ -805,11 +824,21 @@ export class Sim {
     if (!has("barracks")) this.tryPlace(team, "barracks");
     if (done("barracks") && !has("bay") && this.credits[team] > 1700) this.tryPlace(team, "bay");
     if (done("barracks") && count("turret") < 2) this.tryPlace(team, "turret");
+    if (done("barracks") && count("sam") < 1) this.tryPlace(team, "sam");
+    if (done("turret") && count("cannon") < 1 && this.credits[team] > 1100) this.tryPlace(team, "cannon");
+    if (done("barracks") && count("wall") < 3) this.tryPlace(team, "wall");
+    if (done("bay") && !has("strip") && this.credits[team] > 2200) this.tryPlace(team, "strip");
     if (done("barracks") && this.credits[team] > 520 && count("rifle") + count("rocket") < 12) {
       this.enqueue(team, count("rocket") < count("rifle") / 2 ? "rocket" : "rifle");
     }
-    if (done("bay") && this.credits[team] > 800 && count("lancer") + count("bastion") < 6) {
-      this.enqueue(team, count("bastion") < 1 && this.credits[team] > 1400 ? "bastion" : "lancer");
+    const hulls = count("viper") + count("lancer") + count("aegis") + count("bastion");
+    if (done("bay") && this.credits[team] > 700 && hulls < 7) {
+      const next = count("aegis") < 1 ? "aegis" : count("bastion") < 1 && this.credits[team] > 1400 ? "bastion" : count("viper") < 2 ? "viper" : "lancer";
+      this.enqueue(team, next);
+    }
+    const wings = count("kestrel") + count("condor");
+    if (done("strip") && this.credits[team] > 1000 && wings < 3) {
+      this.enqueue(team, count("condor") < 1 ? "condor" : "kestrel");
     }
     if (this.time > 75 && this.aiCool <= 0) {
       const army = this.ents.filter(
@@ -1234,7 +1263,7 @@ export class Sim {
     let best: Ent | null = null;
     let bestD = range;
     for (const o of this.ents) {
-      if (!o.alive || o.team === e.team) continue;
+      if (!o.alive || o.team === e.team || !engages(e.kind, o.kind)) continue;
       const d = Math.hypot(o.x - e.x, o.y - e.y);
       if (d < bestD) {
         bestD = d;
@@ -1395,6 +1424,12 @@ export class Sim {
       const id = this.pathQueue.shift()!;
       const e = this.byId(id);
       if (!e) continue;
+      if (DEFS[e.kind].air) {
+        e.path = [{ x: e.destX, y: e.destY }];
+        e.pathI = 0;
+        n++;
+        continue;
+      }
       e.path = this.astar(e.x, e.y, e.destX, e.destY);
       e.pathI = 0;
       n++;

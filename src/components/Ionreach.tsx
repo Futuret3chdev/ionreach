@@ -10,6 +10,7 @@ import {
   Rocket,
   Shield,
   Square,
+  Star,
   Sword,
   Truck,
   User,
@@ -19,6 +20,7 @@ import {
   Warehouse,
   Wrench,
   Zap,
+  Plane,
 } from "lucide-react";
 import { BUILD_MENU, DEFS, UNIT_MENU, WORLD_H, WORLD_W, type Kind } from "@/game/content";
 import { Sfx } from "@/game/audio";
@@ -40,7 +42,26 @@ const ICONS: Record<Kind, typeof Hexagon> = {
   harvester: Truck,
   lancer: Shield,
   bastion: Box,
+  wall: Square,
+  sam: Rocket,
+  cannon: Crosshair,
+  strip: Plane,
+  viper: Shield,
+  aegis: Rocket,
+  t3x: Star,
+  kestrel: Plane,
+  condor: Plane,
 };
+
+const CHAPTERS = [
+  { t: 0, name: "Glass Horizon" },
+  { t: 15, name: "Callsign T3X" },
+  { t: 30, name: "The Vein" },
+  { t: 45, name: "Steel" },
+  { t: 60, name: "The Wall" },
+  { t: 75, name: "The Sky" },
+  { t: 90, name: "Vesper" },
+];
 
 function clock(t: number): string {
   const s = Math.max(0, Math.floor(t));
@@ -78,6 +99,7 @@ export function Ionreach() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const miniRef = useRef<HTMLCanvasElement>(null);
   const vidRef = useRef<HTMLVideoElement>(null);
+  const cutRef = useRef<HTMLVideoElement>(null);
   const simRef = useRef<Sim | null>(null);
   const camRef = useRef<Cam>({ x: 420, y: 1400, z: 1 });
   const keys = useRef(new Set<string>());
@@ -153,7 +175,7 @@ export function Ionreach() {
         cam.x = pos.x;
         cam.y = pos.y;
         cam.z = 0.78 + Math.sin(u * Math.PI) * 0.28;
-        const line = u < 0.28 ? "Helion forward base." : u < 0.62 ? "Ionite veins. The only thing this rock owes us." : "Vesper already dug in past the ridge.";
+        const line = u < 0.28 ? "Callsign T3X. Helion forward base." : u < 0.62 ? "Ionite veins. The only thing this rock owes us." : "Vesper already dug in past the ridge.";
         if (line !== lineRef.current) {
           lineRef.current = line;
           setIntroLine(line);
@@ -417,25 +439,34 @@ export function Ionreach() {
     if (vidRef.current) vidRef.current.pause();
   }
 
-  function openCinema() {
+  function openCinema(at = 0) {
     sfx.current.unlock();
     sfx.current.startScore();
     setCinema(true);
     setMuted(false);
-    const v = vidRef.current;
-    if (!v) return;
-    v.currentTime = 0;
-    v.muted = false;
-    void v.play().catch(() => undefined);
+    if (vidRef.current) vidRef.current.pause();
+    window.setTimeout(() => {
+      const v = cutRef.current;
+      if (!v) return;
+      v.currentTime = at;
+      v.muted = false;
+      void v.play().catch(() => undefined);
+    }, 40);
   }
 
   function closeCinema() {
     sfx.current.stopScore();
     setCinema(false);
+    if (cutRef.current) {
+      cutRef.current.pause();
+      cutRef.current.muted = true;
+    }
     const v = vidRef.current;
     if (!v) return;
     v.muted = true;
     setMuted(true);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce && phaseRef.current === "title") void v.play().catch(() => undefined);
   }
 
   function toggleMute() {
@@ -478,22 +509,29 @@ export function Ionreach() {
       {!battle && <div className="absolute inset-0 bg-bg/55" />}
       {!battle && (
         <div className="relative z-10 flex h-full flex-col justify-end px-5 py-6 md:px-12 md:py-10">
-          <p className="font-display text-sm tracking-[0.28em] text-ion">HELION DIRECTORATE</p>
+          <p className="font-display text-sm tracking-[0.28em] text-ion">HELION DIRECTORATE · T3X</p>
           <h1 className="font-display text-6xl leading-none font-bold text-fg md:text-8xl">IONREACH</h1>
           <p className="mt-2 max-w-xl text-base text-muted md:text-lg">
-            Glass Horizon. Harvest the ionite, keep the grid alive, and crack the Vesper spire before they roll over the ridge.
+            Callsign T3X holds the glass. Harvest the ionite, raise tanks, walls, and aircraft, and crack the Vesper spire.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" onClick={deploy} className="min-h-11 bg-ion px-5 font-display text-lg font-semibold text-bg">
               Deploy
             </button>
-            <button type="button" onClick={openCinema} className="inline-flex min-h-11 items-center gap-2 border border-line bg-surface/80 px-5 font-display text-lg text-fg">
+            <button type="button" onClick={() => openCinema(0)} className="inline-flex min-h-11 items-center gap-2 border border-line bg-surface/80 px-5 font-display text-lg text-fg">
               <Play className="size-4" />
-              Play trailer
+              Story — 2:00
             </button>
             <button type="button" onClick={() => setManual(true)} className="min-h-11 px-4 font-display text-lg text-muted">
               Field manual
             </button>
+          </div>
+          <div className="mt-4 flex max-w-3xl gap-2 overflow-x-auto">
+            {CHAPTERS.map((c) => (
+              <button key={c.name} type="button" onClick={() => openCinema(c.t)} className="min-h-11 shrink-0 border border-line bg-surface/70 px-3 font-display text-sm text-fg">
+                {c.name}
+              </button>
+            ))}
           </div>
           <p className="mt-6 max-w-lg text-xs text-muted">
             Original battle sim. Not affiliated with any classic strategy publisher.
@@ -504,9 +542,26 @@ export function Ionreach() {
 
       {cinema && (
         <div className="absolute inset-0 z-30 flex flex-col bg-bg">
-          <video className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4" autoPlay controls playsInline poster="/media/poster.jpg" />
+          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4" autoPlay controls playsInline poster="/media/poster.jpg" />
+          <div className="flex items-center gap-2 overflow-x-auto px-3 pt-2">
+            {CHAPTERS.map((c) => (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() => {
+                  const v = cutRef.current;
+                  if (!v) return;
+                  v.currentTime = c.t;
+                  void v.play().catch(() => undefined);
+                }}
+                className="min-h-11 shrink-0 border border-line px-3 font-display text-sm"
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <p className="font-display text-lg tracking-widest text-ion">GLASS HORIZON</p>
+            <p className="font-display text-lg tracking-widest text-ion">T3X · GLASS HORIZON</p>
             <button type="button" onClick={closeCinema} className="min-h-11 bg-ion px-4 font-display text-bg">
               Close
             </button>
@@ -522,7 +577,9 @@ export function Ionreach() {
               <li>Drag a box or tap to select. Right-click to move or attack. On a phone, tap a unit, then tap the ground. Drag to pan.</li>
               <li>Q, or A-move, then click is attack-move. H holds position. R repairs a building for ionite. X scraps it for half cost.</li>
               <li>WASD or arrows pan. Scroll or pinch to zoom. Right-drag pans. Space snaps to the selection. P pauses. Ctrl+1/2/3 stores a group.</li>
-              <li>Haulers pull cyan ionite and dock at a foundry. If the grid use passes output, turrets go dark and production crawls.</li>
+              <li>T3X is your callsign hull. It starts beside the spire and can be rebuilt at the vehicle bay. It can fire on aircraft.</li>
+              <li>Vipers and Lancers are the tank line. Bastions crack buildings. Aegis and Sky Lances swat aircraft. Ridge guns and shard walls hold a lane.</li>
+              <li>A launch spine, after the vehicle bay, builds Kestrel fighters and Condor bombers. They ignore the ridge.</li>
               <li>Win by destroying the Vesper command spire. Lose yours and the horizon falls.</li>
             </ul>
             <button type="button" onClick={() => setManual(false)} className="mt-4 min-h-11 bg-ion px-4 font-display text-bg">
