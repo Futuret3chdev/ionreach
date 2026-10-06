@@ -495,6 +495,15 @@ export function Ionreach() {
       />
       {!battle && <div className="absolute inset-0 bg-bg/55" />}
       {!battle && (
+        <div className="pointer-events-none absolute top-4 left-5 z-20 flex items-center gap-3 md:top-8 md:left-12">
+          <img src="/brand/futuret3ch.png" alt="" className="h-16 w-16 object-contain" />
+          <div>
+            <p className="font-display text-2xl font-bold tracking-[0.2em] text-fg">FUTURET3CH</p>
+            <p className="font-display text-sm tracking-[0.28em] text-ion">CALLSIGN T3X</p>
+          </div>
+        </div>
+      )}
+      {!battle && (
         <div className="relative z-10 flex h-full flex-col justify-end px-5 py-6 md:px-12 md:py-10">
           <p className="font-display text-sm tracking-[0.28em] text-ion">HELION DIRECTORATE · T3X</p>
           <h1 className="font-display text-6xl leading-none font-bold text-fg md:text-8xl">IONREACH</h1>
@@ -557,9 +566,13 @@ export function Ionreach() {
           <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" />
           <div className="pointer-events-none absolute inset-0 flex flex-col">
             <header className="flex items-start justify-between gap-2 p-3">
-              <div className="pointer-events-auto border border-line bg-surface/90 px-3 py-2">
-                <p className="font-display text-xs tracking-[0.22em] text-ion">IONREACH</p>
-                <p className="font-display text-xl leading-none">{clock(hud?.time ?? 0)}</p>
+              <div className="pointer-events-auto flex items-center gap-2 border border-line bg-surface/90 px-3 py-2">
+                <img src="/brand/futuret3ch.png" alt="" className="h-12 w-12 object-contain" />
+                <div>
+                  <p className="font-display text-lg leading-none font-bold tracking-[0.16em] text-fg">FUTURET3CH</p>
+                  <p className="mt-1 font-display text-xs tracking-[0.22em] text-ion">IONREACH · T3X</p>
+                  <p className="mt-1 font-display text-xl leading-none">{clock(hud?.time ?? 0)}</p>
+                </div>
               </div>
               <div className="pointer-events-none max-w-sm text-center">
                 {hud?.message && <p className="border border-line bg-bg/80 px-3 py-2 font-display text-lg text-fg">{hud.message}</p>}

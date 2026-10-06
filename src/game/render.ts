@@ -141,7 +141,6 @@ export class Renderer {
       if (!cinematic && e.team === 1 && DEFS[e.kind].building && !sim.isVisible(e) && !sim.explored[this.ti(e)]) continue;
       this.drawEnt(ctx, e, sim.time, sim.selected.includes(e.id));
     }
-    this.drawFlags(ctx, sim.time);
     if (!cinematic) {
       for (const m of sim.memory.values()) {
         if (sim.ents.some((e) => e.alive && e.kind === m.kind && Math.abs(e.x - m.x) < 2 && Math.abs(e.y - m.y) < 2)) continue;
@@ -199,6 +198,7 @@ export class Renderer {
       ctx.imageSmoothingEnabled = true;
       ctx.drawImage(this.fog, 0, 0, WORLD_W, WORLD_H);
     }
+    this.drawFlags(ctx, sim.time);
     if (ghost) this.drawGhost(ctx, sim, ghost);
     if (box) {
       ctx.save();
@@ -214,6 +214,7 @@ export class Renderer {
       ctx.restore();
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.stampCallsigns(ctx, sim, cam, viewW, viewH);
   }
 
   drawMinimap(ctx: CanvasRenderingContext2D, sim: Sim, cam: Cam, viewW: number, viewH: number, cinematic: boolean): void {
@@ -579,8 +580,8 @@ export class Renderer {
     const ace = e.kind === "t3x";
     const heavy = e.kind === "bastion" || ace;
     const hv = e.kind === "harvester";
-    const len = hv ? 26 : ace ? 32 : heavy ? 28 : e.kind === "viper" ? 18 : 22;
-    const wid = hv ? 16 : ace ? 16 : heavy ? 16 : e.kind === "viper" ? 11 : 13;
+    const len = hv ? 26 : ace ? 52 : heavy ? 44 : e.kind === "viper" ? 36 : 40;
+    const wid = hv ? 16 : ace ? 26 : heavy ? 24 : e.kind === "viper" ? 20 : 22;
     ctx.fillStyle = "#141920";
     roundRect(ctx, -len / 2, -wid / 2, len, wid, 3);
     ctx.fill();
@@ -649,30 +650,47 @@ export class Renderer {
   }
 
   private paintCallsign(ctx: CanvasRenderingContext2D, e: Ent): void {
-    if (e.team !== 0) return;
-    if (e.kind !== "viper" && e.kind !== "lancer" && e.kind !== "bastion" && e.kind !== "t3x" && e.kind !== "aegis") return;
-    const ace = e.kind === "t3x";
+    if (e.team !== 0 || !this.isMarkedTank(e.kind)) return;
+    ctx.fillStyle = "#1a1408";
+    ctx.fillRect(-16, -6, 32, 12);
+    ctx.strokeStyle = "#e8c56b";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-16, -6, 32, 12);
+    ctx.fillStyle = "#ffe7a3";
+    ctx.font = "700 10px Rajdhani, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("T3X", 0, 0);
+  }
+
+  private isMarkedTank(kind: Kind): boolean {
+    return kind === "viper" || kind === "lancer" || kind === "bastion" || kind === "t3x" || kind === "aegis";
+  }
+
+  private stampCallsigns(ctx: CanvasRenderingContext2D, sim: Sim, cam: Cam, viewW: number, viewH: number): void {
     ctx.save();
-    ctx.rotate(-e.facing);
-    ctx.font = ace ? "700 16px Rajdhani, sans-serif" : "700 13px Rajdhani, sans-serif";
+    ctx.font = "700 15px Rajdhani, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = "rgba(4,6,10,0.92)";
-    ctx.strokeText("T3X", 0, ace ? -28 : -20);
-    ctx.fillStyle = ace ? "#ffe7a3" : "#f4d78a";
-    ctx.fillText("T3X", 0, ace ? -28 : -20);
+    for (const e of sim.ents) {
+      if (!e.alive || e.team !== 0 || !this.isMarkedTank(e.kind)) continue;
+      const sx = viewW / 2 + (e.x - cam.x) * cam.z;
+      const sy = viewH / 2 + (e.y - cam.y) * cam.z - 26;
+      if (sx < -40 || sy < -20 || sx > viewW + 40 || sy > viewH + 20) continue;
+      ctx.fillStyle = "rgba(6,8,12,0.92)";
+      ctx.fillRect(sx - 26, sy - 10, 52, 20);
+      ctx.strokeStyle = "#e8c56b";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(sx - 26, sy - 10, 52, 20);
+      ctx.fillStyle = "#ffe7a3";
+      ctx.fillText("T3X", sx, sy);
+    }
     ctx.restore();
-    ctx.fillStyle = "#f6d98a";
-    ctx.font = "700 7px Rajdhani, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("T3X", 0, 1);
   }
 
   private drawFlags(ctx: CanvasRenderingContext2D, time: number): void {
-    this.drawFlag(ctx, 78, 1560, time, 0.2);
-    this.drawFlag(ctx, 820, 1520, time, 1.8);
+    this.drawFlag(ctx, 160, 1188, time, 0.2);
+    this.drawFlag(ctx, 760, 1168, time, 1.8);
   }
 
   private drawFlag(ctx: CanvasRenderingContext2D, x: number, y: number, time: number, phase: number): void {
