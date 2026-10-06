@@ -22,8 +22,11 @@ export class Renderer {
   private fog: HTMLCanvasElement | null = null;
   private tctx: CanvasRenderingContext2D | null = null;
   private fctx: CanvasRenderingContext2D | null = null;
+  private crest: CanvasImageSource | null = null;
+  private crestStarted = false;
 
   ensure(sim: Sim): void {
+    this.loadCrest();
     if (this.terrain) return;
     this.terrain = document.createElement("canvas");
     this.terrain.width = WORLD_W;
@@ -138,6 +141,7 @@ export class Renderer {
       if (!cinematic && e.team === 1 && DEFS[e.kind].building && !sim.isVisible(e) && !sim.explored[this.ti(e)]) continue;
       this.drawEnt(ctx, e, sim.time, sim.selected.includes(e.id));
     }
+    this.drawFlags(ctx, sim.time);
     if (!cinematic) {
       for (const m of sim.memory.values()) {
         if (sim.ents.some((e) => e.alive && e.kind === m.kind && Math.abs(e.x - m.x) < 2 && Math.abs(e.y - m.y) < 2)) continue;
@@ -615,15 +619,103 @@ export class Renderer {
       if (ace) {
         ctx.fillStyle = "#e8c56b";
         ctx.fillRect(-len / 2 + 4, -1.2, len - 10, 2.4);
-        ctx.save();
-        ctx.rotate(-e.facing);
-        ctx.font = "700 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("T3X", 0, -22);
-        ctx.restore();
       }
+      this.paintCallsign(ctx, e);
     }
+  }
+
+  private loadCrest(): void {
+    if (this.crestStarted) return;
+    this.crestStarted = true;
+    const img = new Image();
+    img.src = "/brand/futuret3ch.png";
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth || img.width;
+      c.height = img.naturalHeight || img.height;
+      const g = c.getContext("2d");
+      if (!g) return;
+      g.drawImage(img, 0, 0);
+      const data = g.getImageData(0, 0, c.width, c.height);
+      const px = data.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const max = Math.max(px[i], px[i + 1], px[i + 2]);
+        if (max < 26) px[i + 3] = 0;
+        else if (max < 58) px[i + 3] = Math.round(((max - 26) / 32) * 255);
+      }
+      g.putImageData(data, 0, 0);
+      this.crest = c;
+    };
+  }
+
+  private paintCallsign(ctx: CanvasRenderingContext2D, e: Ent): void {
+    if (e.team !== 0) return;
+    if (e.kind !== "viper" && e.kind !== "lancer" && e.kind !== "bastion" && e.kind !== "t3x" && e.kind !== "aegis") return;
+    const ace = e.kind === "t3x";
+    ctx.save();
+    ctx.rotate(-e.facing);
+    ctx.font = ace ? "700 16px Rajdhani, sans-serif" : "700 13px Rajdhani, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(4,6,10,0.92)";
+    ctx.strokeText("T3X", 0, ace ? -28 : -20);
+    ctx.fillStyle = ace ? "#ffe7a3" : "#f4d78a";
+    ctx.fillText("T3X", 0, ace ? -28 : -20);
+    ctx.restore();
+    ctx.fillStyle = "#f6d98a";
+    ctx.font = "700 7px Rajdhani, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("T3X", 0, 1);
+  }
+
+  private drawFlags(ctx: CanvasRenderingContext2D, time: number): void {
+    this.drawFlag(ctx, 78, 1560, time, 0.2);
+    this.drawFlag(ctx, 820, 1520, time, 1.8);
+  }
+
+  private drawFlag(ctx: CanvasRenderingContext2D, x: number, y: number, time: number, phase: number): void {
+    const wave = Math.sin(time * 2.1 + phase);
+    const flutter = Math.sin(time * 3.4 + phase * 1.3);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.strokeStyle = "#d5dee6";
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(0, 8);
+    ctx.lineTo(0, -196);
+    ctx.stroke();
+    ctx.fillStyle = "#e8c56b";
+    ctx.beginPath();
+    ctx.arc(0, -196, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    const top = -192 + wave * 3;
+    const bot = -118 + wave * 2;
+    ctx.beginPath();
+    ctx.moveTo(4, top);
+    ctx.bezierCurveTo(70, top + flutter * 7, 150, top - flutter * 5, 228, top + wave * 5);
+    ctx.lineTo(228, bot + wave * 4);
+    ctx.bezierCurveTo(150, bot - flutter * 4, 70, bot + flutter * 6, 4, bot);
+    ctx.closePath();
+    const cloth = ctx.createLinearGradient(0, top, 228, bot);
+    cloth.addColorStop(0, "#071018");
+    cloth.addColorStop(1, "#102028");
+    ctx.fillStyle = cloth;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = ION;
+    ctx.stroke();
+    if (this.crest) ctx.drawImage(this.crest, 12, top + 8, 52, 52);
+    ctx.font = "700 22px Rajdhani, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(0,0,0,0.75)";
+    ctx.strokeText("FUTURET3CH", 70, (top + bot) / 2 + flutter);
+    ctx.fillStyle = "#f4fbff";
+    ctx.fillText("FUTURET3CH", 70, (top + bot) / 2 + flutter);
+    ctx.restore();
   }
 }
 
