@@ -441,7 +441,7 @@ export function Ionreach() {
 
   function openCinema(at = 0) {
     sfx.current.unlock();
-    sfx.current.startScore();
+    sfx.current.stopScore();
     setCinema(true);
     setMuted(false);
     if (vidRef.current) vidRef.current.pause();
@@ -475,11 +475,8 @@ export function Ionreach() {
     sfx.current.unlock();
     v.muted = !v.muted;
     setMuted(v.muted);
-    if (v.muted) sfx.current.stopScore();
-    else {
-      sfx.current.startScore();
-      void v.play().catch(() => undefined);
-    }
+    sfx.current.stopScore();
+    if (!v.muted) void v.play().catch(() => undefined);
   }
 
   function onMini(e: React.PointerEvent<HTMLCanvasElement>) {
