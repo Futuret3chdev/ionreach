@@ -481,7 +481,7 @@ export const DEFS: Record<Kind, Def> = {
   t3x: {
     kind: "t3x",
     name: "T3X",
-    blurb: "Directorate callsign. The hull that holds the horizon.",
+    blurb: "Hull that carries the T3X mark. The ledger pays Shield and TAP.",
     cost: 1500,
     time: 16,
     hp: 640,

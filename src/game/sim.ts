@@ -46,6 +46,7 @@ export interface Ent {
   alive: boolean;
   flash: number;
   repath: number;
+  shield: number;
 }
 
 export interface Shot {
@@ -116,12 +117,14 @@ export interface HudSnap {
   paused: boolean;
   winner: Team | null;
   ionLeft: number;
+  t3x: number;
   selected: {
     id: number;
     kind: Kind;
     team: Team;
     hp: number;
     maxHp: number;
+    shield: number;
     cargo: number;
     building: boolean;
     repairOn: boolean;
@@ -185,6 +188,26 @@ function clamp(v: number, a: number, b: number): number {
   return Math.max(a, Math.min(b, v));
 }
 
+const T3X_KEY = "ionreach.t3x";
+
+function readT3x(): number {
+  try {
+    const n = Number(localStorage.getItem(T3X_KEY));
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.floor(n);
+  } catch {
+    return 0;
+  }
+}
+
+function writeT3x(n: number): void {
+  try {
+    localStorage.setItem(T3X_KEY, String(Math.floor(Math.max(0, n))));
+  } catch {
+    /* private mode */
+  }
+}
+
 export class Sim {
   ents: Ent[] = [];
   tiles: Uint8Array;
@@ -218,6 +241,7 @@ export class Sim {
   aiCool = 48;
   contact = false;
   wasLow = false;
+  t3x = 0;
   private by = new Map<number, Ent>();
 
   constructor() {
@@ -229,6 +253,7 @@ export class Sim {
     this.occ = new Int32Array(COLS * ROWS);
     this.explored = new Uint8Array(COLS * ROWS);
     this.visible = new Uint8Array(COLS * ROWS);
+    this.t3x = readT3x();
     this.seed();
     this.recomputeBlocks();
     this.updateFog();
@@ -275,7 +300,7 @@ export class Sim {
     this.addUnit("kestrel", 1, 2460, 470);
     this.addUnit("condor", 1, 2360, 560);
     this.selected = [p.id, ace.id];
-    this.say("Callsign T3X is on the glass. The spire is yours — the glow is not.");
+    this.say(this.t3x > 0 ? `T3X ledger ${this.t3x}. Shield and TAP spend it.` : "Break Vesper forces. T3X pays Shield and TAP.");
   }
 
   private make(kind: Kind, team: Team, x: number, y: number): Ent {
@@ -311,6 +336,7 @@ export class Sim {
       alive: true,
       flash: 0,
       repath: 0,
+      shield: 0,
     };
     this.by.set(e.id, e);
     return e;
@@ -728,6 +754,15 @@ export class Sim {
 
   private hurt(e: Ent, dmg: number): void {
     if (!e.alive || dmg <= 0 || this.winner !== null) return;
+    if (e.shield > 0) {
+      const soak = Math.min(e.shield, dmg);
+      e.shield -= soak;
+      dmg -= soak;
+    }
+    if (dmg <= 0) {
+      e.flash = 0.08;
+      return;
+    }
     e.hp -= dmg;
     e.flash = 0.1;
     if (e.hp <= 0) this.kill(e, true);
@@ -738,6 +773,7 @@ export class Sim {
     e.alive = false;
     e.hp = 0;
     this.by.delete(e.id);
+    if (e.team === 1) this.grantT3x(e);
     if (DEFS[e.kind].building) this.recomputeBlocks();
     if (boom) {
       const big = DEFS[e.kind].building;
@@ -1154,6 +1190,51 @@ export class Sim {
     this.uiDirty = true;
   }
 
+  buyShield(): void {
+    const cost = 40;
+    if (this.t3x < cost) {
+      this.say("Not enough T3X for Shield.");
+      this.events.push({ t: "bad" });
+      this.uiDirty = true;
+      return;
+    }
+    const picked = this.selected.map((id) => this.byId(id)).filter((e): e is Ent => !!e && e.team === 0);
+    const list = picked.length ? picked : this.ents.filter((e) => e.alive && e.team === 0 && e.kind === "spire");
+    if (!list.length) return;
+    this.t3x -= cost;
+    writeT3x(this.t3x);
+    for (const e of list) e.shield = Math.min(480, e.shield + 160);
+    this.say(picked.length ? "Shield on the selection." : "Shield on the spire.");
+    this.events.push({ t: "ui" });
+    this.uiDirty = true;
+  }
+
+  buyTap(): void {
+    const cost = 25;
+    if (this.t3x < cost) {
+      this.say("Not enough T3X for TAP.");
+      this.events.push({ t: "bad" });
+      this.uiDirty = true;
+      return;
+    }
+    this.t3x -= cost;
+    writeT3x(this.t3x);
+    const gain = Math.min(450, Math.max(0, this.capOf(0) - this.credits[0]));
+    this.credits[0] += gain;
+    this.floaters.push({ x: this.pois.player.x, y: this.pois.player.y - 20, text: `TAP +${gain}`, life: 1.6, color: "#e7c56a" });
+    this.say("TAP package on the pad.");
+    this.events.push({ t: "ui" });
+    this.uiDirty = true;
+  }
+
+  private grantT3x(e: Ent): void {
+    const cost = DEFS[e.kind].cost;
+    const pay = e.kind === "spire" ? 250 : Math.max(1, Math.round((cost || 80) / 80));
+    this.t3x += pay;
+    writeT3x(this.t3x);
+    this.floaters.push({ x: e.x, y: e.y - 16, text: `+${pay} T3X`, life: 1.15, color: "#7dffe1" });
+  }
+
   focusPoint(): { x: number; y: number } {
     const e = this.selected.map((id) => this.byId(id)).find((x) => !!x);
     if (e) return { x: e.x, y: e.y };
@@ -1186,6 +1267,7 @@ export class Sim {
         team: e.team,
         hp: e.hp,
         maxHp: e.maxHp,
+        shield: e.shield,
         cargo: e.cargo,
         building: DEFS[e.kind].building,
         repairOn: e.repairOn,
@@ -1206,6 +1288,7 @@ export class Sim {
       paused: this.paused,
       winner: this.winner,
       ionLeft,
+      t3x: this.t3x,
       selected,
       unlocked,
       afford,

@@ -408,6 +408,12 @@ export class Renderer {
       ctx.fillStyle = ratio > 0.4 ? team : EMBER;
       ctx.fillRect(-w / 2, -def.radius - 14, w * ratio, 4);
     }
+    if (e.shield > 0) {
+      const w = def.building ? def.fw * TILE * 0.7 : 22;
+      const ratio = Math.min(1, e.shield / 240);
+      ctx.fillStyle = "rgba(125,255,225,0.95)";
+      ctx.fillRect(-w / 2, -def.radius - 19, w * ratio, 3);
+    }
     ctx.restore();
   }
 
@@ -725,14 +731,17 @@ export class Renderer {
     ctx.strokeStyle = ION;
     ctx.stroke();
     if (this.crest) ctx.drawImage(this.crest, 12, top + 8, 52, 52);
-    ctx.font = "700 22px Rajdhani, sans-serif";
+    ctx.font = "700 15px Rajdhani, sans-serif";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 3;
     ctx.strokeStyle = "rgba(0,0,0,0.75)";
-    ctx.strokeText("FUTURET3CH", 70, (top + bot) / 2 + flutter);
+    const mid = (top + bot) / 2 + flutter;
+    ctx.strokeText("SUPPORTED BY", 70, mid - 10);
+    ctx.strokeText("FUTURET3CH", 70, mid + 10);
     ctx.fillStyle = "#f4fbff";
-    ctx.fillText("FUTURET3CH", 70, (top + bot) / 2 + flutter);
+    ctx.fillText("SUPPORTED BY", 70, mid - 10);
+    ctx.fillText("FUTURET3CH", 70, mid + 10);
     ctx.restore();
   }
 }

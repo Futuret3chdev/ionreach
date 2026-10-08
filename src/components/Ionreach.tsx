@@ -109,12 +109,15 @@ export function Ionreach() {
   const [introLine, setIntroLine] = useState("Helion forward base.");
   const lineRef = useRef("");
   const [best, setBest] = useState<number | null>(null);
+  const [purse, setPurse] = useState(0);
   const phaseRef = useRef<Phase>("title");
 
   useEffect(() => {
     try {
       const v = localStorage.getItem("ionreach-best");
       if (v) setBest(Number(v));
+      const n = Number(localStorage.getItem("ionreach.t3x"));
+      if (Number.isFinite(n) && n > 0) setPurse(Math.floor(n));
     } catch {
       /* ignore */
     }
@@ -129,9 +132,17 @@ export function Ionreach() {
 
   useEffect(() => {
     phaseRef.current = phase;
-    if (phase === "title" && vidRef.current) {
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (!reduce) void vidRef.current.play().catch(() => undefined);
+    if (phase === "title") {
+      try {
+        const n = Number(localStorage.getItem("ionreach.t3x"));
+        setPurse(Number.isFinite(n) && n > 0 ? Math.floor(n) : 0);
+      } catch {
+        setPurse(0);
+      }
+      if (vidRef.current) {
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!reduce) void vidRef.current.play().catch(() => undefined);
+      }
     }
   }, [phase]);
 
@@ -486,8 +497,8 @@ export function Ionreach() {
       <video
         ref={vidRef}
         className={battle ? "hidden" : "absolute inset-0 h-full w-full object-cover"}
-        src="/media/trailer.mp4?v=7"
-        poster="/media/poster.jpg"
+        src="/media/trailer.mp4?v=8"
+        poster="/media/poster.jpg?v=8"
         playsInline
         muted
         loop
@@ -498,8 +509,8 @@ export function Ionreach() {
         <div className="pointer-events-none absolute top-4 left-5 z-20 flex items-center gap-3 md:top-8 md:left-12">
           <img src="/brand/futuret3ch.png" alt="" className="h-16 w-16 object-contain" />
           <div>
-            <p className="font-display text-2xl font-bold tracking-[0.2em] text-fg">FUTURET3CH</p>
-            <p className="font-display text-sm tracking-[0.28em] text-ion">CALLSIGN T3X</p>
+            <p className="font-display text-xl font-bold tracking-[0.14em] text-fg">SUPPORTED BY FUTURET3CH</p>
+            <p className="font-display text-sm tracking-[0.28em] text-ion">T3X ECOSYSTEM</p>
           </div>
         </div>
       )}
@@ -508,7 +519,7 @@ export function Ionreach() {
           <p className="font-display text-sm tracking-[0.28em] text-ion">HELION DIRECTORATE · T3X</p>
           <h1 className="font-display text-6xl leading-none font-bold text-fg md:text-8xl">IONREACH</h1>
           <p className="mt-2 max-w-xl text-base text-muted md:text-lg">
-            Callsign T3X holds the glass. Harvest the ionite, raise tanks, walls, and aircraft, and crack the Vesper spire.
+            Callsign T3X holds the glass. Break Vesper forces to earn T3X, then spend it on Shield and TAP.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" onClick={deploy} className="min-h-11 bg-ion px-5 font-display text-lg font-semibold text-bg">
@@ -524,6 +535,7 @@ export function Ionreach() {
           </div>
           <p className="mt-6 max-w-lg text-xs text-muted">
             Original battle sim. Not affiliated with any classic strategy publisher.
+            {purse > 0 ? ` T3X ledger ${purse}.` : ""}
             {best ? ` Fastest hold: ${clock(best)}.` : ""}
           </p>
         </div>
@@ -531,7 +543,7 @@ export function Ionreach() {
 
       {cinema && (
         <div className="absolute inset-0 z-30 flex flex-col bg-bg">
-          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=7" autoPlay controls playsInline poster="/media/poster.jpg" />
+          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=8" autoPlay controls playsInline poster="/media/poster.jpg?v=8" />
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <p className="font-display text-lg tracking-widest text-ion">T3X · GLASS HORIZON</p>
             <button type="button" onClick={closeCinema} className="min-h-11 bg-ion px-4 font-display text-bg">
@@ -549,7 +561,8 @@ export function Ionreach() {
               <li>Drag a box or tap to select. Right-click to move or attack. On a phone, tap a unit, then tap the ground. Drag to pan.</li>
               <li>Q, or A-move, then click is attack-move. H holds position. R repairs a building for ionite. X scraps it for half cost.</li>
               <li>WASD or arrows pan. Scroll or pinch to zoom. Right-drag pans. Space snaps to the selection. P pauses. Ctrl+1/2/3 stores a group.</li>
-              <li>T3X is your callsign hull. It starts beside the spire and can be rebuilt at the vehicle bay. It can fire on aircraft.</li>
+              <li>T3X is the ecosystem currency and the mark on your ace hull. Destroying Vesper units pays it. The balance stays on this device. The ace starts beside the spire and rebuilds at the vehicle bay.</li>
+              <li>Shield costs 40 T3X and soaks hits on the selection, or on the spire if nothing is selected. TAP costs 25 T3X and drops an ionite package on the pad.</li>
               <li>Vipers and Lancers are the tank line. Bastions crack buildings. Aegis and Sky Lances swat aircraft. Ridge guns and shard walls hold a lane.</li>
               <li>A launch spine, after the vehicle bay, builds Kestrel fighters and Condor bombers. They ignore the ridge.</li>
               <li>Win by destroying the Vesper command spire. Lose yours and the horizon falls.</li>
@@ -569,8 +582,8 @@ export function Ionreach() {
               <div className="pointer-events-auto flex items-center gap-2 border border-line bg-surface/90 px-3 py-2">
                 <img src="/brand/futuret3ch.png" alt="" className="h-12 w-12 object-contain" />
                 <div>
-                  <p className="font-display text-lg leading-none font-bold tracking-[0.16em] text-fg">FUTURET3CH</p>
-                  <p className="mt-1 font-display text-xs tracking-[0.22em] text-ion">IONREACH · T3X</p>
+                  <p className="font-display text-sm leading-none font-bold tracking-[0.12em] text-fg">SUPPORTED BY FUTURET3CH</p>
+                  <p className="mt-1 font-display text-xs tracking-[0.22em] text-ion">T3X ECOSYSTEM</p>
                   <p className="mt-1 font-display text-xl leading-none">{clock(hud?.time ?? 0)}</p>
                 </div>
               </div>
@@ -582,8 +595,17 @@ export function Ionreach() {
               </div>
               <div className="pointer-events-auto border border-line bg-surface/90 px-3 py-2 text-right">
                 <p className="font-display text-2xl leading-none text-gold">{hud?.credits ?? 0}</p>
-                <p className="text-xs text-muted">cap {hud?.cap ?? 0}</p>
-                <p className={hud?.low ? "font-display text-ember" : "font-display text-ion"}>
+                <p className="text-xs text-muted">ionite · cap {hud?.cap ?? 0}</p>
+                <p className="mt-1 font-display text-xl leading-none text-ion">{hud?.t3x ?? 0} T3X</p>
+                <div className="mt-2 flex justify-end gap-1">
+                  <button type="button" onClick={() => simRef.current?.buyShield()} className="min-h-9 border border-line px-2 font-display text-xs">
+                    Shield 40
+                  </button>
+                  <button type="button" onClick={() => simRef.current?.buyTap()} className="min-h-9 border border-line px-2 font-display text-xs">
+                    TAP 25
+                  </button>
+                </div>
+                <p className={hud?.low ? "mt-1 font-display text-ember" : "mt-1 font-display text-ion"}>
                   <Zap className="mr-1 inline size-3" />
                   {hud?.prod ?? 0}/{hud?.use ?? 0}
                 </p>
@@ -675,6 +697,7 @@ export function Ionreach() {
             <p className="font-display text-sm tracking-[0.2em] text-ion">{phase === "win" ? "HORIZON HELD" : "HORIZON LOST"}</p>
             <h2 className="font-display text-4xl font-semibold">{phase === "win" ? "Vesper spire is dust." : "The spire fell."}</h2>
             <p className="mt-2 text-muted">{phase === "win" ? `Held in ${clock(hud?.time ?? 0)}.` : "Rebuild the grid and try the ridge again."}</p>
+            <p className="mt-1 font-display text-ion">T3X ledger {hud?.t3x ?? purse}</p>
             {best && phase === "win" && <p className="mt-1 text-sm text-gold">Best {clock(best)}</p>}
             <div className="mt-5 flex gap-3">
               <button type="button" onClick={deploy} className="min-h-11 bg-ion px-4 font-display text-bg">
@@ -763,6 +786,7 @@ function SelectionCard({
                 <div className="h-full bg-ion" style={{ width: `${Math.max(0, (first.hp / first.maxHp) * 100)}%` }} />
               </div>
             )}
+            {sel.length === 1 && first.shield > 0 && <p className="text-xs text-ion">Shield {Math.floor(first.shield)}</p>}
             {first.building && first.queue.length > 0 && (
               <p className="text-xs text-gold">
                 {DEFS[first.queue[0].kind].name} {Math.max(0, Math.ceil(first.queue[0].left))}s
