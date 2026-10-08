@@ -723,6 +723,7 @@ export function Ionreach() {
           {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
         </button>
       )}
+      <img src="/brand/t3x-coin.png" alt="T3x" className="pointer-events-none absolute right-3 bottom-36 z-40 h-16 w-16 object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.65)] md:right-4 md:bottom-40 md:h-20 md:w-20" />
     </main>
   );
 }
