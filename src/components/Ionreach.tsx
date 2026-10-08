@@ -497,23 +497,14 @@ export function Ionreach() {
       <video
         ref={vidRef}
         className={battle ? "hidden" : "absolute inset-0 h-full w-full object-cover"}
-        src="/media/trailer.mp4?v=8"
-        poster="/media/poster.jpg?v=8"
+        src="/media/trailer.mp4?v=9"
+        poster="/media/poster.jpg?v=9"
         playsInline
         muted
         loop
         preload="auto"
       />
-      {!battle && <div className="absolute inset-0 bg-bg/55" />}
-      {!battle && (
-        <div className="pointer-events-none absolute top-4 left-5 z-20 flex items-center gap-3 md:top-8 md:left-12">
-          <img src="/brand/futuret3ch.png" alt="" className="h-16 w-16 object-contain" />
-          <div>
-            <p className="font-display text-xl font-bold tracking-[0.14em] text-fg">SUPPORTED BY FUTURET3CH</p>
-            <p className="font-display text-sm tracking-[0.28em] text-ion">T3X ECOSYSTEM</p>
-          </div>
-        </div>
-      )}
+      {!battle && <div className="absolute inset-0 bg-bg/45" />}
       {!battle && (
         <div className="relative z-10 flex h-full flex-col justify-end px-5 py-6 md:px-12 md:py-10">
           <p className="font-display text-sm tracking-[0.28em] text-ion">HELION DIRECTORATE · T3X</p>
@@ -534,7 +525,7 @@ export function Ionreach() {
             </button>
           </div>
           <p className="mt-6 max-w-lg text-xs text-muted">
-            Original battle sim. Not affiliated with any classic strategy publisher.
+            Supported by Futuret3ch. Original battle sim. Not affiliated with any classic strategy publisher.
             {purse > 0 ? ` T3X ledger ${purse}.` : ""}
             {best ? ` Fastest hold: ${clock(best)}.` : ""}
           </p>
@@ -543,7 +534,7 @@ export function Ionreach() {
 
       {cinema && (
         <div className="absolute inset-0 z-30 flex flex-col bg-bg">
-          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=8" autoPlay controls playsInline poster="/media/poster.jpg?v=8" />
+          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=9" autoPlay controls playsInline poster="/media/poster.jpg?v=9" />
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <p className="font-display text-lg tracking-widest text-ion">T3X · GLASS HORIZON</p>
             <button type="button" onClick={closeCinema} className="min-h-11 bg-ion px-4 font-display text-bg">
@@ -579,11 +570,11 @@ export function Ionreach() {
           <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" />
           <div className="pointer-events-none absolute inset-0 flex flex-col">
             <header className="flex items-start justify-between gap-2 p-3">
-              <div className="pointer-events-auto flex items-center gap-2 border border-line bg-surface/90 px-3 py-2">
-                <img src="/brand/futuret3ch.png" alt="" className="h-12 w-12 object-contain" />
+              <div className="pointer-events-auto flex items-center gap-2 bg-bg/40 px-2 py-1.5 backdrop-blur-sm">
+                <img src="/brand/futuret3ch.png?v=2" alt="" className="h-10 w-10 object-contain" />
                 <div>
-                  <p className="font-display text-sm leading-none font-bold tracking-[0.12em] text-fg">SUPPORTED BY FUTURET3CH</p>
-                  <p className="mt-1 font-display text-xs tracking-[0.22em] text-ion">T3X ECOSYSTEM</p>
+                  <p className="font-display text-[10px] leading-none tracking-[0.2em] text-muted">SUPPORTED BY</p>
+                  <p className="mt-1 font-display text-sm leading-none font-bold tracking-[0.14em] text-fg">FUTURET3CH</p>
                   <p className="mt-1 font-display text-xl leading-none">{clock(hud?.time ?? 0)}</p>
                 </div>
               </div>
