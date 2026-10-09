@@ -38,13 +38,25 @@ export class Sfx {
   }
 
   shot(kind: string): void {
-    if (kind === "rocket") this.noiseBurst(180, 0.18, 0.07);
-    else if (kind === "shell") this.noiseBurst(90, 0.09, 0.08);
-    else this.tone(880, 0.01, 0.05, "square", 0.03);
+    const j = 0.82 + Math.random() * 0.36;
+    if (kind === "rocket") {
+      this.noiseBurst(240 * j, 0.26, 0.045);
+      this.tone(120 * j, 0, 0.2, "sawtooth", 0.028);
+    } else if (kind === "shell") {
+      this.tone(62 * j, 0, 0.2, "sine", 0.07);
+      this.noiseBurst(110 * j, 0.14, 0.07);
+      this.tone(190 * j, 0.005, 0.05, "triangle", 0.02);
+    } else {
+      this.noiseBurst(1600 * j, 0.04, 0.03);
+      this.tone(420 * j, 0, 0.045, "triangle", 0.018);
+    }
   }
 
   boom(big: boolean): void {
-    this.noiseBurst(big ? 70 : 140, big ? 0.4 : 0.2, big ? 0.12 : 0.07);
+    const j = 0.78 + Math.random() * 0.4;
+    this.tone((big ? 42 : 68) * j, 0, big ? 0.5 : 0.24, "sine", big ? 0.09 : 0.055);
+    this.noiseBurst(big ? 160 : 280, big ? 0.42 : 0.18, big ? 0.07 : 0.045);
+    if (big) this.noiseBurst(70 * j, 0.75, 0.035);
   }
 
   win(): void {

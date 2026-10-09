@@ -73,7 +73,7 @@ export interface Particle {
   max: number;
   size: number;
   color: string;
-  kind: "spark" | "smoke" | "ring" | "dust";
+  kind: "spark" | "smoke" | "ring" | "dust" | "flash" | "debris";
 }
 
 export interface Track {
@@ -678,8 +678,34 @@ export class Sim {
       kind: def.projectile,
       targetId: target.id,
     });
-    e.flash = 0.07;
+    e.flash = 0.08;
     this.events.push({ t: "shot", kind: def.projectile });
+    this.particles.push({
+      x,
+      y,
+      vx: Math.cos(ang) * 12,
+      vy: Math.sin(ang) * 12,
+      life: 0.07,
+      max: 0.07,
+      size: def.projectile === "shell" ? 18 : def.projectile === "rocket" ? 12 : 8,
+      color: "rgba(255,236,190,0.95)",
+      kind: "flash",
+    });
+    for (let i = 0; i < 4; i++) {
+      const spray = (Math.random() - 0.5) * 0.7;
+      const sp = 50 + Math.random() * 90;
+      this.particles.push({
+        x,
+        y,
+        vx: Math.cos(ang + spray) * sp,
+        vy: Math.sin(ang + spray) * sp,
+        life: 0.1 + Math.random() * 0.08,
+        max: 0.18,
+        size: 1.4,
+        color: "#fff4d2",
+        kind: "spark",
+      });
+    }
   }
 
   private tickShots(dt: number): void {
@@ -745,11 +771,15 @@ export class Sim {
       p.life -= dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      if (p.kind === "smoke") p.vy -= 8 * dt;
-      if (p.kind === "spark") p.vy += 30 * dt;
+      if (p.kind === "smoke") {
+        p.vy -= 12 * dt;
+        p.size += 10 * dt;
+      }
+      if (p.kind === "spark") p.vy += 46 * dt;
+      if (p.kind === "debris") p.vy += 110 * dt;
     }
     this.particles = this.particles.filter((p) => p.life > 0);
-    if (this.particles.length > 180) this.particles.splice(0, this.particles.length - 180);
+    if (this.particles.length > 640) this.particles.splice(0, this.particles.length - 640);
   }
 
   private hurt(e: Ent, dmg: number): void {
@@ -794,43 +824,83 @@ export class Sim {
   }
 
   private burst(x: number, y: number, scale: number): void {
-    const n = Math.round(10 + scale * 14);
-    for (let i = 0; i < n; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const sp = 30 + Math.random() * 120 * scale;
-      this.particles.push({
-        x,
-        y,
-        vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp,
-        life: 0.35 + Math.random() * 0.4,
-        max: 0.7,
-        size: 2 + scale * 3,
-        color: Math.random() < 0.5 ? "#ffb15a" : "#ffe7c2",
-        kind: "spark",
-      });
-    }
     this.particles.push({
       x,
       y,
       vx: 0,
       vy: 0,
-      life: 0.35,
-      max: 0.35,
-      size: 18 * scale,
-      color: "rgba(255,220,180,0.8)",
+      life: 0.16 + scale * 0.08,
+      max: 0.26,
+      size: 26 * scale + 12,
+      color: "rgba(255,176,72,0.95)",
+      kind: "flash",
+    });
+    this.particles.push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: 0.42,
+      max: 0.42,
+      size: 14 * scale + 10,
+      color: scale > 0.6 ? "#ffd7a8" : "#fff1d2",
       kind: "ring",
     });
-    for (let i = 0; i < 4; i++) {
+    if (scale > 0.45) {
       this.particles.push({
         x,
         y,
-        vx: (Math.random() - 0.5) * 16,
-        vy: -20 - Math.random() * 20,
-        life: 0.8,
-        max: 0.8,
-        size: 8 + scale * 6,
-        color: "rgba(60,60,60,0.45)",
+        vx: 0,
+        vy: 0,
+        life: 0.7,
+        max: 0.7,
+        size: 26 * scale,
+        color: "rgba(255,84,36,0.75)",
+        kind: "ring",
+      });
+    }
+    const n = Math.round(16 + scale * 26);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 36 + Math.random() * 170 * scale;
+      this.particles.push({
+        x,
+        y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 24,
+        life: 0.22 + Math.random() * 0.5,
+        max: 0.75,
+        size: 1.3 + scale * 2.4,
+        color: Math.random() < 0.3 ? "#fff6e0" : Math.random() < 0.5 ? "#ffb15a" : "#ff5a2a",
+        kind: "spark",
+      });
+    }
+    const chunks = Math.round(4 + scale * 6);
+    for (let i = 0; i < chunks; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 36 + Math.random() * 100 * scale;
+      this.particles.push({
+        x,
+        y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 50,
+        life: 0.5 + Math.random() * 0.45,
+        max: 0.95,
+        size: 1.8 + scale * 2.4,
+        color: Math.random() < 0.5 ? "#241e1a" : "#6d5a48",
+        kind: "debris",
+      });
+    }
+    for (let i = 0; i < 4 + scale * 5; i++) {
+      this.particles.push({
+        x: x + (Math.random() - 0.5) * 10,
+        y,
+        vx: (Math.random() - 0.5) * 22,
+        vy: -14 - Math.random() * 34,
+        life: 0.9 + Math.random() * 0.7,
+        max: 1.5,
+        size: 8 + scale * 9,
+        color: "rgba(36,36,40,0.5)",
         kind: "smoke",
       });
     }

@@ -311,33 +311,87 @@ export class Renderer {
 
   private drawShot(ctx: CanvasRenderingContext2D, s: { x: number; y: number; px: number; py: number; kind: string }): void {
     ctx.save();
-    ctx.strokeStyle = s.kind === "bolt" ? "#d7fff8" : s.kind === "rocket" ? "#ffb089" : "#ffe1a8";
-    ctx.lineWidth = s.kind === "rocket" ? 3 : 2;
+    const bolt = s.kind === "bolt";
+    const rocket = s.kind === "rocket";
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = bolt ? "rgba(170,255,244,0.55)" : rocket ? "rgba(255,120,48,0.6)" : "rgba(255,210,120,0.55)";
+    ctx.lineWidth = rocket ? 8 : bolt ? 5 : 4.5;
+    ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(s.px, s.py);
     ctx.lineTo(s.x, s.y);
     ctx.stroke();
-    ctx.fillStyle = ctx.strokeStyle;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = bolt ? "#f7fffd" : rocket ? "#ffe7d2" : "#fff6df";
+    ctx.lineWidth = rocket ? 2 : 1.5;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.kind === "rocket" ? 3 : 2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(s.px, s.py);
+    ctx.lineTo(s.x, s.y);
+    ctx.stroke();
+    if (rocket) {
+      const a = Math.atan2(s.y - s.py, s.x - s.px);
+      ctx.translate(s.x, s.y);
+      ctx.rotate(a);
+      ctx.fillStyle = "#2c221c";
+      ctx.fillRect(-8, -2.2, 11, 4.4);
+      ctx.fillStyle = "#ffb089";
+      ctx.beginPath();
+      ctx.moveTo(5, 0);
+      ctx.lineTo(-1, -4);
+      ctx.lineTo(-1, 4);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = bolt ? "#eafffb" : "#fff3cc";
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, bolt ? 2.2 : 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
   private drawParticle(ctx: CanvasRenderingContext2D, p: { x: number; y: number; life: number; max: number; size: number; color: string; kind: string }): void {
     const a = Math.max(0, p.life / p.max);
     ctx.save();
-    ctx.globalAlpha = a;
-    if (p.kind === "ring") {
-      ctx.strokeStyle = p.color;
-      ctx.lineWidth = 2;
+    if (p.kind === "flash") {
+      ctx.globalCompositeOperation = "lighter";
+      const r = p.size * (0.7 + (1 - a) * 0.5);
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+      g.addColorStop(0, `rgba(255,255,236,${a})`);
+      g.addColorStop(0.4, p.color);
+      g.addColorStop(1, "rgba(255,90,30,0)");
+      ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * (1.4 - a), 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (p.kind === "ring") {
+      ctx.globalAlpha = a * 0.8;
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 1.5 + (1 - a) * 3;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * (2.4 - a * 1.3), 0, Math.PI * 2);
       ctx.stroke();
+    } else if (p.kind === "debris") {
+      ctx.globalAlpha = a;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.life * 11);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size, -p.size * 0.35, p.size * 2.1, p.size * 0.7);
+    } else if (p.kind === "smoke" || p.kind === "dust") {
+      const rad = Math.max(2, p.size);
+      ctx.globalAlpha = a * (p.kind === "dust" ? 0.4 : 0.5);
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad);
+      g.addColorStop(0, p.color);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx.fill();
     } else {
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = a;
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * (p.kind === "smoke" ? 1.4 - a * 0.3 : a), 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, Math.max(0.6, p.size * (0.45 + a)), 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -430,6 +484,16 @@ export class Renderer {
     ctx.fillRect(-w / 2 + 3, -h / 2 + 3, w - 6, h - 6);
     ctx.fillStyle = team;
     ctx.fillRect(-w / 2 + 3, -h / 2 + 3, w - 6, 3);
+    if (w > 36) {
+      ctx.fillStyle = "rgba(190,230,236,0.22)";
+      const panes = Math.max(2, Math.floor(w / 18));
+      for (let i = 0; i < panes; i++) {
+        const on = Math.sin(time * 2 + i + e.x * 0.01) > -0.2;
+        ctx.globalAlpha = on ? 0.85 : 0.25;
+        ctx.fillRect(-w / 2 + 8 + i * ((w - 16) / panes), -h / 2 + 12, 5, 3);
+      }
+      ctx.globalAlpha = 1;
+    }
     if (e.kind === "spire") {
       ctx.strokeStyle = team;
       ctx.lineWidth = 2;
@@ -444,10 +508,15 @@ export class Renderer {
       ctx.closePath();
       ctx.stroke();
       ctx.fillStyle = team;
-      const pulse = 4 + Math.sin(time * 3) * 2;
+      const pulse = 5 + Math.sin(time * 3) * 2.4;
       ctx.beginPath();
       ctx.arc(0, 0, pulse, 0, Math.PI * 2);
       ctx.fill();
+      ctx.globalAlpha = 0.45;
+      ctx.beginPath();
+      ctx.arc(0, 0, 16 + Math.sin(time * 2.2) * 3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
       ctx.strokeStyle = "rgba(231,238,242,0.7)";
       ctx.beginPath();
       ctx.moveTo(0, -8);
@@ -534,51 +603,77 @@ export class Renderer {
     }
   }
 
-  private drawUnit(ctx: CanvasRenderingContext2D, e: Ent, _time: number, team: string): void {
+  private drawUnit(ctx: CanvasRenderingContext2D, e: Ent, time: number, team: string): void {
     if (DEFS[e.kind].air) {
       ctx.rotate(e.facing);
       const bomb = e.kind === "condor";
-      ctx.fillStyle = "#102028";
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
       ctx.beginPath();
-      ctx.moveTo(bomb ? 20 : 16, 0);
-      ctx.lineTo(bomb ? -16 : -12, bomb ? 13 : 8);
-      ctx.lineTo(-5, 0);
-      ctx.lineTo(bomb ? -16 : -12, bomb ? -13 : -8);
+      ctx.ellipse(-2, 10, bomb ? 16 : 12, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      const body = ctx.createLinearGradient(0, -10, 0, 10);
+      body.addColorStop(0, "#24343c");
+      body.addColorStop(1, "#0c1418");
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.moveTo(bomb ? 22 : 18, 0);
+      ctx.lineTo(bomb ? -14 : -10, bomb ? 12 : 7);
+      ctx.lineTo(-6, 0);
+      ctx.lineTo(bomb ? -14 : -10, bomb ? -12 : -7);
       ctx.closePath();
       ctx.fill();
       ctx.fillStyle = team;
-      ctx.fillRect(-2, -1.6, bomb ? 12 : 9, 3.2);
+      ctx.fillRect(-1, -1.5, bomb ? 14 : 10, 3);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = `rgba(180,230,255,${0.35 + Math.sin(time * 30) * 0.15})`;
+      ctx.beginPath();
+      ctx.moveTo(-8, 0);
+      ctx.lineTo(-16 - Math.random() * 6, 2);
+      ctx.lineTo(-16 - Math.random() * 6, -2);
+      ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
       if (e.flash > 0) {
         ctx.fillStyle = "#fff";
         ctx.beginPath();
-        ctx.arc(16, 0, 3, 0, Math.PI * 2);
+        ctx.arc(18, 0, 4, 0, Math.PI * 2);
         ctx.fill();
       }
       return;
     }
     if (e.kind === "rifle" || e.kind === "rocket") {
       ctx.rotate(e.facing);
-      ctx.fillStyle = "#2c241e";
+      const step = Math.sin(time * 10 + (e.id || 0));
+      ctx.strokeStyle = "#1c1612";
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.ellipse(0, 0, 7, 5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#e6d2c2";
+      ctx.moveTo(-1, 1);
+      ctx.lineTo(-3, 6 + step);
+      ctx.moveTo(1, 1);
+      ctx.lineTo(3, 6 - step);
+      ctx.stroke();
+      ctx.fillStyle = e.team === 0 ? "#16302c" : "#3a1814";
       ctx.beginPath();
-      ctx.arc(4, 0, 3.2, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, 5.5, 3.6, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = e.kind === "rocket" ? "#c9a27a" : "#9aa7b2";
-      ctx.lineWidth = e.kind === "rocket" ? 3 : 1.6;
+      ctx.fillStyle = "#e4cbb8";
+      ctx.beginPath();
+      ctx.arc(4.2, -0.4, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = e.kind === "rocket" ? "#c9a27a" : "#b7c3cc";
+      ctx.lineWidth = e.kind === "rocket" ? 2.6 : 1.5;
       ctx.beginPath();
       ctx.moveTo(2, 0);
-      ctx.lineTo(e.kind === "rocket" ? 14 : 12, 0);
+      ctx.lineTo(e.kind === "rocket" ? 13 : 11, -0.6);
       ctx.stroke();
       ctx.fillStyle = team;
-      ctx.fillRect(-6, -4, 3, 8);
+      ctx.fillRect(-5.5, -3.2, 2.4, 6.4);
       if (e.flash > 0) {
-        ctx.fillStyle = "#fff";
+        ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = "#fff6d8";
         ctx.beginPath();
-        ctx.arc(13, 0, 3, 0, Math.PI * 2);
+        ctx.arc(13, 0, 4, 0, Math.PI * 2);
         ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
       }
       return;
     }
@@ -586,46 +681,77 @@ export class Renderer {
     const ace = e.kind === "t3x";
     const heavy = e.kind === "bastion" || ace;
     const hv = e.kind === "harvester";
-    const len = hv ? 26 : ace ? 52 : heavy ? 44 : e.kind === "viper" ? 36 : 40;
-    const wid = hv ? 16 : ace ? 26 : heavy ? 24 : e.kind === "viper" ? 20 : 22;
-    ctx.fillStyle = "#141920";
+    const len = hv ? 28 : ace ? 54 : heavy ? 46 : e.kind === "viper" ? 36 : 42;
+    const wid = hv ? 16 : ace ? 26 : heavy ? 24 : e.kind === "viper" ? 18 : 22;
+    ctx.fillStyle = "#0c1014";
+    roundRect(ctx, -len / 2 - 1, -wid / 2 - 1, len + 2, wid + 2, 4);
+    ctx.fill();
+    const hull = ctx.createLinearGradient(0, -wid / 2, 0, wid / 2);
+    hull.addColorStop(0, "#3a4450");
+    hull.addColorStop(0.45, "#1c242c");
+    hull.addColorStop(1, "#10161c");
+    ctx.fillStyle = hull;
     roundRect(ctx, -len / 2, -wid / 2, len, wid, 3);
     ctx.fill();
-    ctx.fillStyle = "#2a323c";
-    ctx.fillRect(-len / 2, -wid / 2, 4, wid);
-    ctx.fillRect(len / 2 - 4, -wid / 2, 4, wid);
+    ctx.fillStyle = "#07090c";
+    ctx.fillRect(-len / 2 + 2, -wid / 2, len - 4, 3);
+    ctx.fillRect(-len / 2 + 2, wid / 2 - 3, len - 4, 3);
+    ctx.strokeStyle = "rgba(0,0,0,0.55)";
+    ctx.lineWidth = 1;
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-len / 2 + 6, i * (wid / 7));
+      ctx.lineTo(len / 2 - 6, i * (wid / 7));
+      ctx.stroke();
+    }
     ctx.fillStyle = team;
-    ctx.fillRect(-2, -wid / 2, len / 2, 2);
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(-4, -wid / 2 + 1, len * 0.42, 2);
+    ctx.globalAlpha = 1;
     if (hv) {
       const fill = DEFS.harvester.cargo ? e.cargo / DEFS.harvester.cargo : 0;
-      ctx.fillStyle = "rgba(62,224,197,0.85)";
-      ctx.fillRect(-6, -5, 12 * fill, 10);
+      ctx.fillStyle = "rgba(8,16,18,0.9)";
+      ctx.fillRect(-8, -6, 16, 12);
+      ctx.fillStyle = "rgba(62,224,197,0.9)";
+      ctx.fillRect(-7, -5, 14 * fill, 10);
       ctx.strokeStyle = "#9fb0be";
-      ctx.strokeRect(-6, -5, 12, 10);
+      ctx.strokeRect(-8, -6, 16, 12);
     } else {
       ctx.save();
       ctx.rotate(e.aim - e.facing);
-      ctx.fillStyle = "#1b2129";
+      ctx.fillStyle = "#12181e";
       ctx.beginPath();
-      ctx.arc(0, 0, heavy ? 7 : 5.5, 0, Math.PI * 2);
+      ctx.arc(0, 0, heavy ? 8 : 6.2, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#d5dde6";
-      ctx.fillRect(0, heavy ? -2.2 : -1.6, heavy ? 18 : 14, heavy ? 4.4 : 3.2);
+      ctx.strokeStyle = team;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.fillStyle = "#e7eef4";
+      const barrel = heavy ? 20 : 15;
+      ctx.fillRect(2, heavy ? -2.1 : -1.5, barrel, heavy ? 4.2 : 3);
+      ctx.fillStyle = "#8b98a4";
+      ctx.fillRect(barrel - 2, heavy ? -2.6 : -1.9, 3, heavy ? 5.2 : 3.8);
       if (e.kind === "aegis") {
         ctx.fillStyle = team;
-        ctx.fillRect(2, -6, 8, 2);
-        ctx.fillRect(2, 4, 8, 2);
+        ctx.fillRect(3, -7, 9, 1.6);
+        ctx.fillRect(3, 5.4, 9, 1.6);
       }
       if (e.flash > 0) {
-        ctx.fillStyle = "#fff4d2";
+        ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = "#fff6d0";
         ctx.beginPath();
-        ctx.arc(heavy ? 18 : 14, 0, 3.5, 0, Math.PI * 2);
+        ctx.arc(barrel + 4, 0, heavy ? 6 : 4.5, 0, Math.PI * 2);
         ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
       }
       ctx.restore();
       if (ace) {
         ctx.fillStyle = "#e8c56b";
-        ctx.fillRect(-len / 2 + 4, -1.2, len - 10, 2.4);
+        ctx.fillRect(-len / 2 + 6, -1.3, len - 14, 2.6);
+        ctx.globalAlpha = 0.55 + Math.sin(time * 4) * 0.25;
+        ctx.fillStyle = "#7dffe1";
+        ctx.fillRect(len / 2 - 8, -wid / 2 + 4, 3, wid - 8);
+        ctx.globalAlpha = 1;
       }
       this.paintCallsign(ctx, e);
     }
